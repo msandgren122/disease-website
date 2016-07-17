@@ -11,7 +11,7 @@ install.packages('shiny')
 library(shiny)
 ```
 
-To use in R, create a folder in your working directory named `disease_app`. Place `server.R` and `ui.R` in this main level. Next, place the `data` and `www` inside `disease_app`. 
+To use in R, create a folder in your working directory named `disease_app`. Place `server.R` and `ui.R` in this main level. Next, place the `data` and `www` folders inside `disease_app`. This folder structure is vital-without it, the app will not run.
 
 To run the app, open `server.R` and `ui.R` in R, and in the console, type: 
 ```R
