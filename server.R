@@ -1,6 +1,6 @@
 library(tseries); library(forecast); library(caret); library(shiny); library(ggthemr)
 options(shiny.maxRequestSize = 9*1024^2)
-ggthemr("flat dark", type = "outer")
+#ggthemr("flat dark", type = "outer")
 
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
