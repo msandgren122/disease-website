@@ -6,6 +6,7 @@ options(shiny.maxRequestSize = 9*1024^2)
 
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
+dis$"acute upper respiratory tract infections" <- NULL
 model_diagnostics <- read.csv("data/model_diagnostics.csv",
                               check.names = FALSE)
 model_forecasts <- read.csv("data/6_forecasts.csv",
@@ -378,11 +379,13 @@ shinyServer(function(input, output, session) {
   
   nnar_fit <- reactive({
     if (input$inc_nnar_xreg == FALSE) {
-      fit_a <- nnetar(nnar_series())
+      fit_a <- nnetar(nnar_series(),
+                      reltol = input$reltol_nn)
       fit_a
     } else {
       fit_a <- nnetar(nnar_series(),
-                      xreg = nnar_xreg_series())
+                      xreg = nnar_xreg_series(),
+                      reltol = input$reltol_nn)
       fit_a
     }
   })
