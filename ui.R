@@ -82,9 +82,15 @@ shinyUI(
             ),
             
             tags$hr(), 
+            
             checkboxInput("rest_seas",
                           "Restrict search to non-seasonal models?",
                           value = TRUE),
+            
+            checkboxInput("rest_stat",
+                          "Restrict search to stationary models?",
+                          value = TRUE),
+            
             checkboxInput("inc_arima_xreg",
                           "Include Regressor?",
                           value = FALSE),
