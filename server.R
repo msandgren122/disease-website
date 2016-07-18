@@ -164,12 +164,24 @@ shinyServer(function(input, output, session) {
       fit_a <- auto.arima(arima_series(),
                           approximation = TRUE,
                           stepwise = TRUE,
+                          max.d = input$max_d,
+                          max.D = input$max_D,
+                          stationary = input$rest_stat,
+                          seasonal = input$rest_seas,
+                          allowdrift = input$allowdrift,
+                          allowmean = input$allowmean,
                           trace = TRUE)
       fit_a
     } else {
       fit_a <- auto.arima(arima_series(),
                           xreg = xreg_series2(),
                           approximation = TRUE,
+                          max.d = input$max_d,
+                          max.D = input$max_D,
+                          stationary = input$rest_stat,
+                          seasonal = input$rest_seas,
+                          allowdrift = input$allowdrift,
+                          allowmean = input$allowmean,
                           stepwise = TRUE,
                           trace = FALSE)
       fit_a

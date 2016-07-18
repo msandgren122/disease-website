@@ -95,6 +95,14 @@ shinyUI(
                         max = 3,
                         value = 0),
             
+            checkboxInput("allowdrift",
+                          "Allow models with drift?",
+                          value = FALSE),
+            
+            checkboxInput("allowmean",
+                          "Allow models with a non-zero mean?",
+                          value = FALSE),
+            
             checkboxInput("rest_seas",
                           "Restrict search to non-seasonal models?",
                           value = TRUE),
