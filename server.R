@@ -162,12 +162,14 @@ shinyServer(function(input, output, session) {
   arima_fit <- reactive({
     if (input$inc_arima_xreg == FALSE) {
       fit_a <- auto.arima(arima_series(),
+                          approximation = TRUE,
                           stepwise = TRUE,
                           trace = TRUE)
       fit_a
     } else {
       fit_a <- auto.arima(arima_series(),
                           xreg = xreg_series2(),
+                          approximation = TRUE,
                           stepwise = TRUE,
                           trace = FALSE)
       fit_a
@@ -241,7 +243,7 @@ shinyServer(function(input, output, session) {
       afit1 <- arima_fit()
       afit <- forecast(afit1,
                        h = input$periods,
-                       xreg = xreg_series())
+                       xreg = xreg_series2())
       afcast <- data.frame(x = time(afit$mean), y = afit$mean)
       aactual <- data.frame(x = time(arima_act_series()), y = arima_act_series())
       afits <- data.frame(x = time(arima_series()), y = fitted.values(afit))
