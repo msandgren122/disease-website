@@ -105,8 +105,8 @@ shinyUI(
                           value = FALSE),
             
             checkboxInput("rest_seas",
-                          "Restrict search to non-seasonal models?",
-                          value = TRUE),
+                          "Allow seasonal models?",
+                          value = FALSE),
             
             checkboxInput("rest_stat",
                           "Restrict search to stationary models?",

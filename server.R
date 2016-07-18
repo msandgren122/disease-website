@@ -184,7 +184,7 @@ shinyServer(function(input, output, session) {
                           allowdrift = input$allowdrift,
                           allowmean = input$allowmean,
                           stepwise = TRUE,
-                          trace = FALSE)
+                          trace = TRUE)
       fit_a
     }
     #fit_a
