@@ -175,6 +175,9 @@ shinyUI(
    # ),
    
    
+     
+   
+   
    
    
       tabPanel(
@@ -223,6 +226,32 @@ shinyUI(
           )
         )
       ),
+   
+   
+   
+   
+   
+     tabPanel(
+       "Correllogram",
+       sidebarLayout(
+         sidebarPanel(
+           h2("Correllogram"),
+           p("This application plots a correllogram of selected diseases."),
+           selectInput("corr_diseases", 
+                       "Diseases:",
+                       c(colnames(dis)),
+                       selected = colnames(dis)[7:10],
+                       multiple = TRUE),
+           
+           tags$hr()
+           
+         ),
+         
+         mainPanel(
+           plotOutput("corr_plot")
+         ) #close mainPanel
+       )   #close sidebarLayour
+     ),
                    
     
     
