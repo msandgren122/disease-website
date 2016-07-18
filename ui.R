@@ -1,6 +1,7 @@
 library(markdown)
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
+dis$"acute upper respiratory tract infections" <- NULL
 
 shinyUI(
   navbarPage(
@@ -82,6 +83,35 @@ shinyUI(
             ),
             
             tags$hr(), 
+            
+            sliderInput("max_d",
+                        "Max number of non-seasonal differences",
+                        min = 0,
+                        max = 3,
+                        value = 0),
+            
+            sliderInput("max_D",
+                        "Max number of seasonal differences",
+                        min = 0,
+                        max = 3,
+                        value = 0),
+            
+            checkboxInput("allowdrift",
+                          "Allow models with drift?",
+                          value = FALSE),
+            
+            checkboxInput("allowmean",
+                          "Allow models with a non-zero mean?",
+                          value = FALSE),
+            
+            checkboxInput("rest_seas",
+                          "Restrict search to non-seasonal models?",
+                          value = TRUE),
+            
+            checkboxInput("rest_stat",
+                          "Restrict search to stationary models?",
+                          value = TRUE),
+            
             checkboxInput("inc_arima_xreg",
                           "Include Regressor?",
                           value = FALSE),
@@ -146,6 +176,9 @@ shinyUI(
    # ),
    
    
+     
+   
+   
    
    
       tabPanel(
@@ -171,6 +204,19 @@ shinyUI(
                           value = 16)
             ),
             
+            sliderInput("reltol_nn", 
+                        "Relative tolerance:",
+                        min = 0.0001, 
+                        max = 0.9999,
+                        sep = "",
+                        step = 0.001,
+                        value = 0.700),
+            helpText("Stop if the optimizer is unable to reduce the fit criterion",
+                     "by a factor of at least"),
+            code("1 - reltol"),
+            helpText("Larger values will result in quicker computation times at the cost of precision",
+                     "Smaller values will increase precision, but result in longer computation times."),
+            
             tags$hr(), 
             checkboxInput("inc_nnar_xreg",
                           "Include Regressor?",
@@ -194,6 +240,32 @@ shinyUI(
           )
         )
       ),
+   
+   
+   
+   
+   
+     tabPanel(
+       "Correllogram",
+       sidebarLayout(
+         sidebarPanel(
+           h2("Correllogram"),
+           p("This application plots a correllogram of selected diseases."),
+           selectInput("corr_diseases", 
+                       "Diseases:",
+                       c(colnames(dis)),
+                       selected = colnames(dis),
+                       multiple = TRUE),
+           
+           tags$hr()
+           
+         ),
+         
+         mainPanel(
+           plotOutput("corr_plot")
+         ) #close mainPanel
+       )   #close sidebarLayour
+     ),
                    
     
     

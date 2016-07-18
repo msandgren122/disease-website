@@ -1,11 +1,12 @@
 library(tseries); library(forecast); library(caret); library(shiny)
-library(ggthemr)
+library(ggthemr); library(corrplot)
 
 options(shiny.maxRequestSize = 9*1024^2)
 #ggthemr("flat dark", type = "outer")
 
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
+dis$"acute upper respiratory tract infections" <- NULL
 model_diagnostics <- read.csv("data/model_diagnostics.csv",
                               check.names = FALSE)
 model_forecasts <- read.csv("data/6_forecasts.csv",
@@ -164,12 +165,24 @@ shinyServer(function(input, output, session) {
       fit_a <- auto.arima(arima_series(),
                           approximation = TRUE,
                           stepwise = TRUE,
+                          max.d = input$max_d,
+                          max.D = input$max_D,
+                          stationary = input$rest_stat,
+                          seasonal = input$rest_seas,
+                          allowdrift = input$allowdrift,
+                          allowmean = input$allowmean,
                           trace = TRUE)
       fit_a
     } else {
       fit_a <- auto.arima(arima_series(),
                           xreg = xreg_series2(),
                           approximation = TRUE,
+                          max.d = input$max_d,
+                          max.D = input$max_D,
+                          stationary = input$rest_stat,
+                          seasonal = input$rest_seas,
+                          allowdrift = input$allowdrift,
+                          allowmean = input$allowmean,
                           stepwise = TRUE,
                           trace = FALSE)
       fit_a
@@ -366,11 +379,13 @@ shinyServer(function(input, output, session) {
   
   nnar_fit <- reactive({
     if (input$inc_nnar_xreg == FALSE) {
-      fit_a <- nnetar(nnar_series())
+      fit_a <- nnetar(nnar_series(),
+                      reltol = input$reltol_nn)
       fit_a
     } else {
       fit_a <- nnetar(nnar_series(),
-                      xreg = nnar_xreg_series())
+                      xreg = nnar_xreg_series(),
+                      reltol = input$reltol_nn)
       fit_a
     }
   })
@@ -461,7 +476,7 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  
+
   # output$nnar_plot <- renderPlot({
   #   if (is.null(dis))
   #     return(NULL)
@@ -476,4 +491,27 @@ shinyServer(function(input, output, session) {
   #   lines(fitted(nnar_fit()), col = "blue")
   #   grid(col = "gray")
   # })
+  
+  ##############################################
+  # Corrgram 
+  ##############################################
+  
+  output$corr_plot <- renderPlot({
+    if (is.null(dis))
+      return(NULL)
+    
+    d <- dis
+    mcor <- cor(d[input$corr_diseases], use="complete.obs")
+    corrplot(mcor, 
+             type = "lower", 
+             method = "circle",
+             tl.col = "black", 
+             tl.srt = 25)
+        
+  })
+  
+  
+  
+  
+  
 })
