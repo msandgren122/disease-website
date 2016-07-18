@@ -380,12 +380,14 @@ shinyServer(function(input, output, session) {
   nnar_fit <- reactive({
     if (input$inc_nnar_xreg == FALSE) {
       fit_a <- nnetar(nnar_series(),
-                      reltol = input$reltol_nn)
+                      reltol = input$reltol_nn,
+                      na.action = na.omit)
       fit_a
     } else {
       fit_a <- nnetar(nnar_series(),
                       xreg = nnar_xreg_series(),
-                      reltol = input$reltol_nn)
+                      reltol = input$reltol_nn,
+                      na.action = na.omit)
       fit_a
     }
   })
