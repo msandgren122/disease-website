@@ -1,6 +1,7 @@
 library(markdown)
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
+dis$"acute upper respiratory tract infections" <- NULL
 
 shinyUI(
   navbarPage(
@@ -175,6 +176,9 @@ shinyUI(
    # ),
    
    
+     
+   
+   
    
    
       tabPanel(
@@ -200,6 +204,19 @@ shinyUI(
                           value = 16)
             ),
             
+            sliderInput("reltol_nn", 
+                        "Relative tolerance:",
+                        min = 0.0001, 
+                        max = 0.9999,
+                        sep = "",
+                        step = 0.001,
+                        value = 0.700),
+            helpText("Stop if the optimizer is unable to reduce the fit criterion",
+                     "by a factor of at least"),
+            code("1 - reltol"),
+            helpText("Larger values will result in quicker computation times at the cost of precision",
+                     "Smaller values will increase precision, but result in longer computation times."),
+            
             tags$hr(), 
             checkboxInput("inc_nnar_xreg",
                           "Include Regressor?",
@@ -223,6 +240,32 @@ shinyUI(
           )
         )
       ),
+   
+   
+   
+   
+   
+     tabPanel(
+       "Correllogram",
+       sidebarLayout(
+         sidebarPanel(
+           h2("Correllogram"),
+           p("This application plots a correllogram of selected diseases."),
+           selectInput("corr_diseases", 
+                       "Diseases:",
+                       c(colnames(dis)),
+                       selected = colnames(dis),
+                       multiple = TRUE),
+           
+           tags$hr()
+           
+         ),
+         
+         mainPanel(
+           plotOutput("corr_plot")
+         ) #close mainPanel
+       )   #close sidebarLayour
+     ),
                    
     
     
