@@ -83,6 +83,18 @@ shinyUI(
             
             tags$hr(), 
             
+            sliderInput("max_d",
+                        "Max number of non-seasonal differences",
+                        min = 0,
+                        max = 3,
+                        value = 0),
+            
+            sliderInput("max_D",
+                        "Max number of seasonal differences",
+                        min = 0,
+                        max = 3,
+                        value = 0),
+            
             checkboxInput("rest_seas",
                           "Restrict search to non-seasonal models?",
                           value = TRUE),
