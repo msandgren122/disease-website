@@ -1,5 +1,5 @@
 library(tseries); library(forecast); library(caret); library(shiny)
-library(ggthemr)
+library(ggthemr); library(corrplot)
 
 options(shiny.maxRequestSize = 9*1024^2)
 #ggthemr("flat dark", type = "outer")
@@ -473,7 +473,7 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  
+
   # output$nnar_plot <- renderPlot({
   #   if (is.null(dis))
   #     return(NULL)
@@ -488,4 +488,27 @@ shinyServer(function(input, output, session) {
   #   lines(fitted(nnar_fit()), col = "blue")
   #   grid(col = "gray")
   # })
+  
+  ##############################################
+  # Corrgram 
+  ##############################################
+  
+  output$corr_plot <- renderPlot({
+    if (is.null(dis))
+      return(NULL)
+    
+    d <- dis
+    mcor <- cor(d[input$corr_diseases], use="complete.obs")
+    corrplot(mcor, 
+             type = "lower", 
+             method = "circle",
+             tl.col = "black", 
+             tl.srt = 25)
+        
+  })
+  
+  
+  
+  
+  
 })
