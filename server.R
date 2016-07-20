@@ -1,11 +1,13 @@
-library(tseries); library(forecast); library(caret); library(shiny)
-library(ggthemr); library(corrplot)
+library(tseries); library(forecast); library(shiny)
+library(ggthemr); library(corrplot); library(plotly)
+library(xts); library(lubridate)
 
 options(shiny.maxRequestSize = 9*1024^2)
 #ggthemr("flat dark", type = "outer")
 
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
+dis <- dis[-469, ]
 dis$"acute upper respiratory tract infections" <- NULL
 model_diagnostics <- read.csv("data/model_diagnostics.csv",
                               check.names = FALSE)
@@ -343,6 +345,46 @@ shinyServer(function(input, output, session) {
   
   
   #******NNAR Plot*************
+  
+  #create dt
+  dt <- reactive({
+    d <- dis
+    dts <- as.Date(paste(d$year, 
+                         d$week, 
+                         1, 
+                         sep = "-"),
+                   "%Y-%U-%u")
+    dts <- as.POSIXlt(dts)
+    dts
+  })
+  
+  #create df_xts
+  pretty_time <- reactive({
+    d <- dis
+    d_xts <- xts(x = d[input$disease_nn],
+                 order.by = dt(),
+                 frequency = 52)
+    d_xts
+  })
+  
+  #create train xts time
+  train <- reactive({
+    trane <- pretty_time()[1:520] #hardcoded:bad
+    trane
+  })
+  
+  fcast_time <- reactive({
+    trane <- pretty_time()[521:(520 + input$periods_nn)] #hardcoded:bad
+    trane
+  })
+  
+  #create test xts time
+  test <- reactive({
+    tast <- pretty_time()[521:537] #hardcoded:bad
+    tast
+  })
+  
+  
   nnar_series_full <- reactive({
     d <- dis
     nnar_ts <- ts(d[input$disease_nn], 
@@ -354,7 +396,7 @@ shinyServer(function(input, output, session) {
   nnar_series <- reactive({
     d <- dis
     nnar_ts <- window(nnar_series_full(), 
-                  start = c(2006, 1), end = c(2016, 1),
+                  start = c(2006, 1), end = c(2015, 52),
                   frequency = 52)
     nnar_ts
   })
@@ -362,7 +404,7 @@ shinyServer(function(input, output, session) {
   nnar_xreg_series <- reactive({
     d <- dis
     nnar_xs <- ts(d[input$nnar_xreg], 
-                   start = c(2006, 1), end = c(2016, 1),
+                   start = c(2006, 1), end = c(2015, 52),
                    frequency = 52)
     nnar_xs
   })
@@ -370,7 +412,7 @@ shinyServer(function(input, output, session) {
   nnar_act_series <- reactive({
     d <- dis
     ts <- window(nnar_series_full(),
-             start = c(2016, 2), end = c(2016, 17),
+             start = c(2016, 1), end = c(2016, 17),
              frequency = 52)
     ts
   })
@@ -401,76 +443,74 @@ shinyServer(function(input, output, session) {
   })
   
   
-  output$nnar_plot <- renderPlot({
+  output$nnar_plot <- renderPlotly({
     if (is.null(dis))
       return(NULL)
     
     if (input$inc_nnar_xreg == FALSE) {
       fit <- forecast(nnar_fit(), h = input$periods_nn)  
-      fcast <- data.frame(x = time(fit$mean), y = fit$mean)
-      actual <- data.frame(x = time(nnar_act_series()), y = nnar_act_series())
-      fits <- data.frame(x = time(nnar_series()), y = fitted.values(fit))
-      real <- data.frame(x = time(nnar_series()), y = fit$x)
       
-      ggplot() +
-        geom_line(aes(x, y, color = "Actual 2016 Values"),
-                  data = actual,
-                  size = 1) + 
-        geom_line(aes(x, y, color = "Model Fit"),
-                  data = fits,
-                  size = 1) + 
-        geom_line(aes(x, y, color = "Actual Series"),
-                  data = real,
-                  size = 1) +
-        geom_line(aes(x, y, color = "2016 Forecasts"),
-                  data = fcast,
-                  size = 1) +
-        labs(x = "Time", y = "Cases/Week") +
-        theme(axis.text = element_text(size = 14),
-              axis.title = element_text(size = 14),
-              legend.text = element_text(size = 14),
-              legend.title = element_text(size = 14))
+      fc_ts <- ts(fit$mean, start = start(fit$mean), end = end(fit$mean), frequency = 52)
+      foo <- format(date_decimal(time(fc_ts)[1:length(time(fc_ts))] + 3/365), "%Y-%m-%d")
+      dt2 <- as.POSIXlt(foo, tz = "UTC")
+      dt2 <- xts(x = fit$mean, order.by = dt2, frequency = 52)
+      
+      
+      fcast <- data.frame(x = time(dt2), y = fit$mean)
+      actual <- data.frame(x = time(test()), y = nnar_act_series())
+      fits <- data.frame(x = time(train()), y = fitted.values(fit))
+      real <- data.frame(x = time(train()), y = fit$x)
+      
+      plot_ly() %>%
+        add_trace(data = actual, x = x, y = y, name = "Actual 2016 Values") %>%
+        add_trace(data = fits, x = x, y = y, name = "Model Fit") %>%
+        add_trace(data = real, x = x, y = y, name = "Actual Series") %>%
+        add_trace(data = fcast, x = x, y = y, name = "Forecasts") %>%
+        layout(xaxis = list(title = "Time"),
+               yaxis = list(title = "Cases/Week"))  
+      
       
     } else {
-      fit <- forecast(nnar_fit(), 
-                      h = input$periods_nn,
-                      xreg = nnar_xreg_series())  
-      fcast <- data.frame(x = time(fit$mean), y = fit$mean)
-      actual <- data.frame(x = time(nnar_act_series()), y = nnar_act_series())
-      fits <- data.frame(x = time(nnar_series()), y = fitted.values(fit))
-      real <- data.frame(x = time(nnar_series()), y = fit$x)
+      fit <- forecast(nnar_fit(), h = input$periods_nn, xreg = nnar_xreg_series())  
+      fc_ts <- ts(fit$mean, start = start(fit$mean), end = end(fit$mean), frequency = 52)
+      foo <- format(date_decimal(time(fc_ts)[1:length(time(fc_ts))] + 3/365), "%Y-%m-%d")
+      dt2 <- as.POSIXlt(foo, tz = "UTC")
+      dt2 <- xts(x = fit$mean, order.by = dt2, frequency = 52)
+      fcast <- data.frame(x = time(dt2), y = fit$mean)
+      actual <- data.frame(x = time(test()), y = nnar_act_series())
+      fits <- data.frame(x = time(train()), y = fitted.values(fit))
+      real <- data.frame(x = time(train()), y = fit$x)
       
-      ggplot() +
-        geom_line(aes(x, y, color = "Actual 2016 Values"),
-                  data = actual,
-                  size = 1) + 
-        geom_line(aes(x, y, color = "Model Fit"),
-                  data = fits,
-                  size = 1) + 
-        geom_line(aes(x, y, color = "Actual Series"),
-                  data = real,
-                  size = 1) +
-        geom_line(aes(x, y, color = "2016 Forecasts"),
-                  data = fcast,
-                  size = 1) +
-        labs(x = "Time", y = "Cases/Week") +
-        theme(axis.text = element_text(size = 14),
-              axis.title = element_text(size = 14),
-              legend.text = element_text(size = 14),
-              legend.title = element_text(size = 14))
-      # fits <- data.frame(x = time(nnar_series()), 
-      #                    y = fitted.values(nnar_fit()))
-      # fits2 <- data.frame(x = time(nnar_act_series()), 
-      #                     y = nnar_act_series())
+      plot_ly() %>%
+        add_trace(data = actual, x = x, y = y, name = "Actual 2016 Values") %>%
+        add_trace(data = fits, x = x, y = y, name = "Model Fit") %>%
+        add_trace(data = real, x = x, y = y, name = "Actual Series") %>%
+        add_trace(data = fcast, x = x, y = y, name = "Forecasts") %>%
+        layout(xaxis = list(title = "Time"),
+               yaxis = list(title = "Cases/Week"))  
+      
+      # fit <- forecast(nnar_fit(), 
+      #                 h = input$periods_nn,
+      #                 xreg = nnar_xreg_series())  
+      # fcast <- data.frame(x = time(fit$mean), y = fit$mean)
+      # actual <- data.frame(x = time(nnar_act_series()), y = nnar_act_series())
+      # fits <- data.frame(x = time(nnar_series()), y = fitted.values(fit))
+      # real <- data.frame(x = time(nnar_series()), y = fit$x)
       # 
-      # autoplot(forecast(nnar_fit(), 
-      #                   xreg = nnar_xreg_series(),
-      #                   h = input$periods_nn),
-      #          ylab = "Cases/Week") +
-      #   geom_line(aes(x, y, color = "Model Fit"), 
-      #             data=fits) +
-      #   geom_line(aes(x, y, color = "Actual Values"), 
-      #             data=fits2) +
+      # ggplot() +
+      #   geom_line(aes(x, y, color = "Actual 2016 Values"),
+      #             data = actual,
+      #             size = 1) + 
+      #   geom_line(aes(x, y, color = "Model Fit"),
+      #             data = fits,
+      #             size = 1) + 
+      #   geom_line(aes(x, y, color = "Actual Series"),
+      #             data = real,
+      #             size = 1) +
+      #   geom_line(aes(x, y, color = "2016 Forecasts"),
+      #             data = fcast,
+      #             size = 1) +
+      #   labs(x = "Time", y = "Cases/Week") +
       #   theme(axis.text = element_text(size = 14),
       #         axis.title = element_text(size = 14),
       #         legend.text = element_text(size = 14),
@@ -478,22 +518,10 @@ shinyServer(function(input, output, session) {
     }
   })
   
-
-  # output$nnar_plot <- renderPlot({
-  #   if (is.null(dis))
-  #     return(NULL)
-  #   
-  #   
-  #   plot(forecast(nnar_fit(), 
-  #                 h = input$periods_nn), 
-  #        col = "red", 
-  #        ylab = "Cases per Week", 
-  #        main = paste("Plot of", input$disease_nn),
-  #        lwd = 2.2)
-  #   lines(fitted(nnar_fit()), col = "blue")
-  #   grid(col = "gray")
-  # })
   
+  
+  
+
   ##############################################
   # Corrgram 
   ##############################################
