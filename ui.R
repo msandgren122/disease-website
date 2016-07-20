@@ -233,7 +233,7 @@ shinyUI(
           ),
                 
           mainPanel(
-            plotOutput("nnar_plot"),
+            plotlyOutput("nnar_plot"),
             h4("Model Summary"),
             verbatimTextOutput("nnar_summary"),
             verbatimTextOutput("nnar_accuracy")
