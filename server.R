@@ -65,7 +65,7 @@ shinyServer(function(input, output, session) {
     d <- dis
     tab_1 <- ts(d[input$disease_ts], 
                 start = c(2006, 1), 
-                end = c(2016, 1),
+                end = c(2015, 52),
                 frequency = 52)
     
     
@@ -80,7 +80,7 @@ shinyServer(function(input, output, session) {
     d <- dis
     tab_1 <- ts(d[input$disease_season_ts], 
                 start = c(2006, 1), 
-                end = c(2016, 1),
+                end = c(2015, 52),
                 frequency = 52)
     tab_1
   })
@@ -91,11 +91,11 @@ shinyServer(function(input, output, session) {
 #         cex.axis=1)
 #    grid(col="gray")
   
-  output$plot_ts <- renderPlot({
+  output$plot_ts <- renderPlotly({
     if (is.null(input$disease_ts))
       return(NULL)
     
-    autoplot(timeSeries(),
+    p <- autoplot(timeSeries(),
              ylab = "Cases/Week",
              main = "",
              size = 1) +
@@ -103,23 +103,25 @@ shinyServer(function(input, output, session) {
             axis.title = element_text(size = 14),
             legend.text = element_text(size = 14),
             legend.title = element_text(size = 14))
+    ggplotly(p)
   })
   
   
   
-  output$plot_seasonplot <- renderPlot({
+  output$plot_seasonplot <- renderPlotly({
     if (is.null(input$disease_season_ts))
       return(NULL)
-    
-    ggseasonplot(timeSeries2(),
-                 s = 12,
-                 ylab = "Cases/Week",
-                 main = paste("Seasonal plot of", 
-                              input$disease_season_ts)) +
+
+    p <- ggseasonplot(timeSeries2(),
+                      s = 52,
+                      ylab = "Cases/Week",
+                      main = paste("Seasonal plot of", 
+                                   input$disease_season_ts)) +
       theme(axis.text = element_text(size = 14),
             axis.title = element_text(size = 14),
             legend.text = element_text(size = 14),
             legend.title = element_text(size = 14))
+    ggplotly(p)
   })
 
 #-------------------------------

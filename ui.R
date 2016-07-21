@@ -45,8 +45,8 @@ shinyUI(
         ),
         
         mainPanel(
-          plotOutput("plot_ts"),
-          plotOutput("plot_seasonplot")
+          plotlyOutput("plot_ts"),
+          plotlyOutput("plot_seasonplot")
         ) #close mainPanel
       )   #close sidebarPanel
     ),    #close tabPanel
