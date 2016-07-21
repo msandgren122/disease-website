@@ -79,7 +79,7 @@ shinyUI(
                           "Number of weeks to forecast:",
                           min = 1, 
                           max = 100,
-                          value = 16)
+                          value = 20)
             ),
             
             tags$hr(), 
@@ -127,7 +127,7 @@ shinyUI(
           ),
           
           mainPanel(
-            plotOutput("arima_plot"),
+            plotlyOutput("arima_plot"),
             
             h4("Model Summary"),
             verbatimTextOutput("arima_summary")
