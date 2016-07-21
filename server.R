@@ -126,6 +126,44 @@ shinyServer(function(input, output, session) {
   
   
 #******ARIMA Plot*************
+  
+  dt_a <- reactive({
+    d <- dis
+    dts <- as.Date(paste(d$year, 
+                         d$week, 
+                         1, 
+                         sep = "-"),
+                   "%Y-%U-%u")
+    dts <- as.POSIXlt(dts)
+    dts
+  })
+  
+  #create df_xts
+  pretty_time_a <- reactive({
+    d <- dis
+    d_xts <- xts(x = d[input$disease_2],
+                 order.by = dt_a(),
+                 frequency = 52)
+    d_xts
+  })
+  
+  #create train xts time
+  train_a <- reactive({
+    trane <- pretty_time_a()[1:520] #hardcoded:bad
+    trane
+  })
+  
+  fcast_time_a <- reactive({
+    trane <- pretty_time_a()[521:(520 + input$disease_2)] #hardcoded:bad
+    trane
+  })
+  
+  #create test xts time
+  test_a <- reactive({
+    tast <- pretty_time_a()[521:537] #hardcoded:bad
+    tast
+  })
+  
   arima_series_full <- reactive({
     d <- dis
     foo_ts <- ts(d[input$disease_2],
@@ -134,12 +172,11 @@ shinyServer(function(input, output, session) {
     foo_ts
   })
   
-  
   arima_series <- reactive({
     d <- dis
     foox_ts <- window(arima_series_full(), 
                  start = c(2006, 1), 
-                 end = c(2016, 1),
+                 end = c(2015, 52),
                  frequency = 52)
     foox_ts
   })
@@ -147,7 +184,7 @@ shinyServer(function(input, output, session) {
   xreg_series2 <- reactive({
     d <- dis
     xreg_ts2 <- ts(d[input$arima_xreg], 
-                   start = c(2006, 1), end=c(2016, 1),
+                   start = c(2006, 1), end=c(2015, 52),
                    frequency = 52)
     xreg_ts2
   })
@@ -155,7 +192,7 @@ shinyServer(function(input, output, session) {
   arima_act_series <- reactive({
     d <- dis
     ts <- window(arima_series_full(),
-                 start = c(2016, 2), end = c(2016, 17),
+                 start = c(2016, 1), end = c(2016, 17),
                  frequency = 52)
     ts
   })
@@ -189,29 +226,16 @@ shinyServer(function(input, output, session) {
                           trace = TRUE)
       fit_a
     }
-    #fit_a
   })
   
-  # arima_fit <- reactive({
-  #   fit_a <- auto.arima(arima_series(), 
-  #                       stepwise=TRUE, 
-  #                       trace=TRUE)
-  #   fit_a
-  # })
-  
-  #Looks like you can put the output$ outside of observe as well
-  # observeEvent(input$go,
-  #              output$arima_summary <- renderPrint({
-  #                summary(arima_fit())
-  #              })
-  #              )
+
   
   output$arima_summary <- renderPrint({
     summary(arima_fit())
   })
 
   
-  output$arima_plot <- renderPlot({
+  output$arima_plot <- renderPlotly({
 
     if (is.null(dis))
       return(NULL)
@@ -219,80 +243,140 @@ shinyServer(function(input, output, session) {
     if (input$inc_arima_xreg == FALSE) {
       afit1 <- arima_fit()
       afit <- forecast(afit1, h = input$periods)
-      afcast <- data.frame(x = time(afit$mean), y = afit$mean)
-      aactual <- data.frame(x = time(arima_act_series()), y = arima_act_series())
-      afits <- data.frame(x = time(arima_series()), y = fitted.values(afit))
-      areal <- data.frame(x = time(arima_series()), y = afit$x)
+      
+      fc_ts <- ts(afit$mean, start = start(afit$mean), end = end(afit$mean), frequency = 52)
+      foo <- format(date_decimal(time(fc_ts)[1:length(time(fc_ts))] + 3/365), "%Y-%m-%d")
+      dt2 <- as.POSIXlt(foo, tz = "UTC")
+      dt2 <- xts(x = afit$mean, order.by = dt2, frequency = 52)
+      
+      afcast <- data.frame(x = time(dt2), 
+                           y = afit$mean)
+      aactual <- data.frame(x = time(test_a()), 
+                            y = arima_act_series())
+      afits <- data.frame(x = time(train_a()), 
+                          y = fitted.values(afit))
+      areal <- data.frame(x = time(train_a()), 
+                          y = afit$x)
       ribbon <- data.frame(low_80 = afit$lower[,1],
                            hi_80 = afit$upper[,1],
                            low_95 = afit$lower[,2],
                            hi_95 = afit$upper[,2],
-                           x = time(afit$mean))
-      ggplot() +
-        geom_line(aes(x, y, color = "Actual 2016 Values"),
-                  data = aactual,
-                  size = 1) +
-        geom_line(aes(x, y, color = "Model Fit"),
-                  data = afits,
-                  size = 1) +
-        geom_line(aes(x, y, color = "Actual Series"),
-                  data = areal,
-                  size = 1) +
-        geom_line(aes(x, y, color = "2016 Forecasts"),
-                  data = afcast,
-                  size = 1) +
-        geom_ribbon(aes(ymin = low_80, ymax = hi_80, x), 
-                    alpha = 0.27,
-                    data = ribbon) +
-        geom_ribbon(aes(ymin = low_95, ymax = hi_95, x), 
-                    alpha = 0.2,
-                    data = ribbon,
-                    show.legend = TRUE) +
-        labs(x = "Time", y = "Cases/Week") +
-        theme(axis.text = element_text(size = 14),
-              axis.title = element_text(size = 14),
-              legend.text = element_text(size = 14),
-              legend.title = element_text(size = 14))
+                           x = time(dt2))
+      plot_ly() %>%
+        
+        add_trace(data = afits, x = x, y = y, name = "Model Fit") %>%
+        add_trace(data = areal, x = x, y = y, name = "Actual Series") %>%
+        add_trace(data = ribbon, 
+                  x = time(dt2), 
+                  y = low_95, 
+                  fill = "",
+                  marker = list(size = 0),
+                  line = list(color = "rgb(160, 160, 160)",
+                              width = 0),
+                  showlegend = FALSE) %>%
+        add_trace(data = ribbon,
+                  x = time(dt2), 
+                  y = hi_95, 
+                  fill = "tonexty",
+                  marker = list(size = 0),
+                  line = list(color = "rgb(160, 160, 160)",
+                              width = 0),
+                  name = "95% Pred. Int.") %>%
+        add_trace(data = ribbon, 
+                  x = time(dt2), 
+                  y = low_80,
+                  line = list(color = "rgb(140, 140, 140)",
+                              width = 0),
+                  fill = "",
+                  showlegend = FALSE) %>%
+        add_trace(data = ribbon, 
+                  x = time(dt2), 
+                  y = hi_80, 
+                  fill = "tonexty",
+                  line = list(color = "rgb(140, 140, 140)",
+                              width = 0),
+                  name = "80% Pred. Int") %>%
+        add_trace(data = afcast, 
+                  x = x, y = y, 
+                  line = list(color = "rgb(226, 51, 232)"),
+                  name = "Forecasts") %>%
+        add_trace(data = aactual,
+                  x = x, y = y, 
+                  line = list(color = "rgb(255, 157, 0)"),
+                  name = "Actual 2016 Values") %>%
+        
+        
+        layout(xaxis = list(title = "Time"),
+               yaxis = list(title = "Cases/Week"))  
     
     } else {
       afit1 <- arima_fit()
-      afit <- forecast(afit1,
-                       h = input$periods,
-                       xreg = xreg_series2())
-      afcast <- data.frame(x = time(afit$mean), y = afit$mean)
-      aactual <- data.frame(x = time(arima_act_series()), y = arima_act_series())
-      afits <- data.frame(x = time(arima_series()), y = fitted.values(afit))
-      areal <- data.frame(x = time(arima_series()), y = afit$x)
+      afit <- forecast(afit1, h = input$periods, xreg = xreg_series2())
+      
+      fc_ts <- ts(afit$mean, start = start(afit$mean), end = end(afit$mean), frequency = 52)
+      foo <- format(date_decimal(time(fc_ts)[1:length(time(fc_ts))] + 3/365), "%Y-%m-%d")
+      dt2 <- as.POSIXlt(foo, tz = "UTC")
+      dt2 <- xts(x = afit$mean, order.by = dt2, frequency = 52)
+      
+      afcast <- data.frame(x = time(dt2), 
+                           y = afit$mean)
+      aactual <- data.frame(x = time(test_a()), 
+                            y = arima_act_series())
+      afits <- data.frame(x = time(train_a()), 
+                          y = fitted.values(afit))
+      areal <- data.frame(x = time(train_a()), 
+                          y = afit$x)
       ribbon <- data.frame(low_80 = afit$lower[,1],
                            hi_80 = afit$upper[,1],
                            low_95 = afit$lower[,2],
                            hi_95 = afit$upper[,2],
-                           x = time(afit$mean))
-      ggplot() +
-        geom_line(aes(x, y, color = "Actual Series"),
-                  data = areal,
-                  size = 1) +
-        geom_line(aes(x, y, color = "Model Fit"),
-                  data = afits,
-                  size = 1) +
-        geom_line(aes(x, y, color = "2016 Forecasts"),
-                  data = afcast,
-                  size = 1) +
-        geom_line(aes(x, y, color = "Actual 2016 Values"),
-                  data = aactual,
-                  size = 1) +
-        geom_ribbon(aes(ymin = low_80, ymax = hi_80, x), 
-                    alpha = 0.3,
-                    data = ribbon) +
-        geom_ribbon(aes(ymin = low_95, ymax = hi_95, x), 
-                    alpha = 0.2,
-                    data = ribbon,
-                    show.legend = TRUE) +
-        labs(x = "Time", y = "Cases/Week") +
-        theme(axis.text = element_text(size = 14),
-              axis.title = element_text(size = 14),
-              legend.text = element_text(size = 14),
-              legend.title = element_text(size = 14))
+                           x = time(dt2))
+      plot_ly() %>%
+        
+        add_trace(data = afits, x = x, y = y, name = "Model Fit") %>%
+        add_trace(data = areal, x = x, y = y, name = "Actual Series") %>%
+        add_trace(data = ribbon, 
+                  x = time(dt2), 
+                  y = low_95, 
+                  fill = "",
+                  marker = list(size = 0),
+                  line = list(color = "rgb(160, 160, 160)",
+                              width = 0),
+                  showlegend = FALSE) %>%
+        add_trace(data = ribbon,
+                  x = time(dt2), 
+                  y = hi_95, 
+                  fill = "tonexty",
+                  marker = list(size = 0),
+                  line = list(color = "rgb(160, 160, 160)",
+                              width = 0),
+                  name = "95% Pred. Int.") %>%
+        add_trace(data = ribbon, 
+                  x = time(dt2), 
+                  y = low_80,
+                  line = list(color = "rgb(140, 140, 140)",
+                              width = 0),
+                  fill = "",
+                  showlegend = FALSE) %>%
+        add_trace(data = ribbon, 
+                  x = time(dt2), 
+                  y = hi_80, 
+                  fill = "tonexty",
+                  line = list(color = "rgb(140, 140, 140)",
+                              width = 0),
+                  name = "80% Pred. Int") %>%
+        add_trace(data = afcast, 
+                  x = x, y = y, 
+                  line = list(color = "rgb(226, 51, 232)"),
+                  name = "Forecasts") %>%
+        add_trace(data = aactual,
+                  x = x, y = y, 
+                  line = list(color = "rgb(255, 157, 0)"),
+                  name = "Actual 2016 Values") %>%
+        
+        
+        layout(xaxis = list(title = "Time"),
+               yaxis = list(title = "Cases/Week"))  
     }
   })
   
