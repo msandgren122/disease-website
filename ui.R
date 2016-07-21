@@ -1,4 +1,4 @@
-library(markdown)
+library(markdown); library(plotly)
 dis <- read.csv("data/diseases_reduced.csv",
                 check.names = FALSE)
 dis$"acute upper respiratory tract infections" <- NULL
@@ -84,17 +84,33 @@ shinyUI(
             
             tags$hr(), 
             
-            sliderInput("max_d",
-                        "Max number of non-seasonal differences",
-                        min = 0,
-                        max = 3,
-                        value = 0),
+            checkboxInput("rest_stat",
+                          "Restrict search to stationary models?",
+                          value = TRUE),
             
-            sliderInput("max_D",
-                        "Max number of seasonal differences",
-                        min = 0,
-                        max = 3,
-                        value = 0),
+            conditionalPanel(
+              condition = "input.rest_stat == false",
+              sliderInput("max_d",
+                          "Max number of non-seasonal differences",
+                          min = 0,
+                          max = 3,
+                          value = 0),
+              checkboxInput("rest_seas",
+                            "Allow seasonal models?",
+                            value = FALSE),
+              conditionalPanel(
+                condition = "input.rest_seas == true",
+                sliderInput("max_D",
+                            "Max number of seasonal differences",
+                            min = 0,
+                            max = 3,
+                            value = 0)
+              )
+            ),
+            
+            
+            
+            
             
             checkboxInput("allowdrift",
                           "Allow models with drift?",
@@ -103,14 +119,6 @@ shinyUI(
             checkboxInput("allowmean",
                           "Allow models with a non-zero mean?",
                           value = FALSE),
-            
-            checkboxInput("rest_seas",
-                          "Allow seasonal models?",
-                          value = FALSE),
-            
-            checkboxInput("rest_stat",
-                          "Restrict search to stationary models?",
-                          value = TRUE),
             
             checkboxInput("inc_arima_xreg",
                           "Include Regressor?",
