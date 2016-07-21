@@ -108,7 +108,7 @@ shinyServer(function(input, output, session) {
   
   
   
-  output$plot_seasonplot <- renderPlotly({
+  output$plot_seasonplot <- renderPlot({
     if (is.null(input$disease_season_ts))
       return(NULL)
 
@@ -121,7 +121,8 @@ shinyServer(function(input, output, session) {
             axis.title = element_text(size = 14),
             legend.text = element_text(size = 14),
             legend.title = element_text(size = 14))
-    ggplotly(p)
+    #ggplotly(p)
+    p
   })
 
 #-------------------------------
