@@ -267,8 +267,10 @@ shinyServer(function(input, output, session) {
                            x = time(dt2))
       plot_ly() %>%
         
-        add_trace(data = afits, x = x, y = y, name = "Model Fit") %>%
-        add_trace(data = areal, x = x, y = y, name = "Actual Series") %>%
+        add_trace(data = afits, x = x, y = y, name = "Model Fit",
+                  line = list(color = "rgb(0, 255, 0)")) %>%
+        add_trace(data = areal, x = x, y = y, name = "Actual Series",
+                  line = list(color = "rgb(255, 0, 0)")) %>%
         add_trace(data = ribbon, 
                   x = time(dt2), 
                   y = low_95, 
