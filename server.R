@@ -98,11 +98,11 @@ shinyServer(function(input, output, session) {
     p <- autoplot(timeSeries(),
              ylab = "Cases/Week",
              main = "",
-             size = 1) +
-      theme(axis.text = element_text(size = 14),
-            axis.title = element_text(size = 14),
-            legend.text = element_text(size = 14),
-            legend.title = element_text(size = 14))
+             size = 1)
+      # theme(axis.text = element_text(size = 14),
+      #       axis.title = element_text(size = 14),
+      #       legend.text = element_text(size = 14),
+      #       legend.title = element_text(size = 14))
     ggplotly(p)
   })
   
