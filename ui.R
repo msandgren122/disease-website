@@ -78,7 +78,7 @@ shinyUI(
               sliderInput("periods", 
                           "Number of weeks to forecast:",
                           min = 1, 
-                          max = 100,
+                          max = 200,
                           value = 20)
             ),
             
