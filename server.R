@@ -1,6 +1,6 @@
 library(tseries); library(forecast); library(shiny)
 library(ggthemr); library(corrplot); library(plotly)
-library(xts); library(lubridate)
+library(xts); library(lubridate); library(magrittr)
 
 options(shiny.maxRequestSize = 9*1024^2)
 #ggthemr("flat dark", type = "outer")
@@ -529,6 +529,11 @@ shinyServer(function(input, output, session) {
   
   output$nnar_accuracy <- renderPrint({
     accuracy(nnar_fit())
+  })
+  
+  output$nnar_wts <- renderPrint({
+    foo <- nnar_fit()$model
+    lapply(foo, `[[`, 11) %>% dput
   })
   
   
