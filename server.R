@@ -533,7 +533,11 @@ shinyServer(function(input, output, session) {
   
   output$nnar_wts <- renderPrint({
     foo <- nnar_fit()$model
-    lapply(foo, `[[`, 11) %>% dput
+    mod_wts <-
+      lapply(foo, `[[`, 11)  %>%
+      as.data.frame  %>%
+      rowMeans %>%
+      dput
   })
   
   
