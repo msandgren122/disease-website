@@ -212,12 +212,11 @@ shinyUI(
                           value = 16)
             ),
             
-            sliderInput("reltol_nn", 
+            numericInput("reltol_nn", 
                         "Relative tolerance:",
-                        min = 0.0001, 
-                        max = 0.9999,
-                        sep = "",
-                        step = 0.001,
+                        min = 0.001, 
+                        max = 0.999,
+                        step = 0.01,
                         value = 0.700),
             helpText("Stop if the optimizer is unable to reduce the fit criterion",
                      "by a factor of at least"),
