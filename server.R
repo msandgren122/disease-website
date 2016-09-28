@@ -455,21 +455,37 @@ shinyServer(function(input, output, session) {
                  frequency = 52)
     d_xts
   })
+  ####################################################
+  # cutoff <- '2016'
+  # (trane_range <- paste("2006", cutoff, sep = "::"))
+  # periods_nn <- 16
+  # 
+  # (trane <- d_xts[trane_range])
+  # 
+  # fcast_time <- d_xts[cutoff]
+  # (fcast_time <- fcast_time[1:periods_nn])
+  # 
+  # tast <- d_xts[cutoff]
+  # (tast <- tast[1:periods_nn])
+  # ###################################################
   
   #create train xts time
   train <- reactive({
-    trane <- pretty_time()[1:520] #hardcoded:bad
+    trane_range <- paste("2006", toString((input$cutoff - 1)), sep = "::")
+    trane <- pretty_time()[trane_range] #hardcoded:bad
     trane
   })
   
   fcast_time <- reactive({
-    trane <- pretty_time()[521:(520 + input$periods_nn)] #hardcoded:bad
-    trane
+    fcast_time <- pretty_time()[toString(input$cutoff)]
+    fcast_time <- fcast_time[1:input$periods_nn]
+    fcast_time
   })
   
   #create test xts time
   test <- reactive({
-    tast <- pretty_time()[521:537] #hardcoded:bad
+    tast <- pretty_time()[toString(input$cutoff)]
+    tast <- tast[1:(input$periods_nn + 1)]
     tast
   })
   
@@ -477,7 +493,7 @@ shinyServer(function(input, output, session) {
   nnar_series_full <- reactive({
     d <- dis
     nnar_ts <- ts(d[input$disease_nn], 
-                  start = c(2006, 1), end = c(2016, 17),
+                  start = c(2006, 1), end = c(input$cutoff, (input$periods_nn + 1)),
                   frequency = 52)
     nnar_ts
   })
@@ -485,7 +501,7 @@ shinyServer(function(input, output, session) {
   nnar_series <- reactive({
     d <- dis
     nnar_ts <- window(nnar_series_full(), 
-                  start = c(2006, 1), end = c(2015, 52),
+                  start = c(2006, 1), end = c((input$cutoff - 1), 52),
                   frequency = 52)
     nnar_ts
   })
@@ -493,7 +509,7 @@ shinyServer(function(input, output, session) {
   nnar_xreg_series <- reactive({
     d <- dis
     nnar_xs <- ts(d[input$nnar_xreg], 
-                   start = c(2006, 1), end = c(2015, 52),
+                   start = c(2006, 1), end = c((input$cutoff - 1), 52),
                    frequency = 52)
     nnar_xs
   })
@@ -501,7 +517,7 @@ shinyServer(function(input, output, session) {
   nnar_act_series <- reactive({
     d <- dis
     ts <- window(nnar_series_full(),
-             start = c(2016, 1), end = c(2016, 17),
+             start = c(input$cutoff, 1), end = c(input$cutoff, (input$periods_nn + 1)),
              frequency = 52)
     ts
   })

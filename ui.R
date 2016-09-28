@@ -208,9 +208,18 @@ shinyUI(
               sliderInput("periods_nn", 
                           "Number of weeks to forecast:",
                           min = 1, 
-                          max = 200,
+                          max = 50,
                           value = 16)
             ),
+            
+            sliderInput(
+              "cutoff",
+              "Cutoff data used to train model:",
+              min = 2008,
+              max = 2016,
+              value = 2016,
+              step = 1,
+              sep = ""),
             
             numericInput("reltol_nn", 
                         "Relative tolerance:",
@@ -218,6 +227,7 @@ shinyUI(
                         max = 0.999,
                         step = 0.01,
                         value = 0.700),
+            
             helpText("Stop if the optimizer is unable to reduce the fit criterion",
                      "by a factor of at least"),
             code("1 - reltol"),
